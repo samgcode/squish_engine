@@ -92,7 +92,7 @@ impl Spring {
       point_a.position.y,
       point_b.position.x,
       point_b.position.y,
-      2.0,
+      1.0,
       Color::from_rgba(255, v, 0, 255),
     );
   }
