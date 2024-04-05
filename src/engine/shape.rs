@@ -2,7 +2,7 @@ use std::f32::INFINITY;
 
 use macroquad::prelude::*;
 
-use crate::config::GRAVITY;
+use crate::config::*;
 
 use super::*;
 
@@ -56,10 +56,8 @@ impl Shape {
 
     add_springs(&mut springs, 1, body_strength, &points);
     add_springs(&mut springs, 2, body_strength, &points);
-    // add_springs(&mut springs, 3, body_strength, &points);
-    // add_springs(&mut springs, 4, body_strength, &points);
-    // add_springs(&mut springs, 5, body_strength, &points);
-    // add_springs(&mut springs, 6, body_strength, &points);
+    // add_springs(&mut springs, 8, body_strength, &points);
+    // add_springs(&mut springs, 15, body_strength, &points);
 
     for i in 0..np {
       frame_springs.push(Spring::new(frame_strength.0, 0.0, frame_strength.1, i, i));
@@ -83,8 +81,10 @@ impl Shape {
   }
 
   pub fn update(&mut self, delta_time: f32) {
-    // self.points[self.np - 1].position = mouse_position().into();
-    // self.position = mouse_position().into();
+    if is_mouse_button_down(MouseButton::Left) {
+      self.points[self.np - 1].position = mouse_position().into();
+      // self.position = mouse_position().into();
+    }
 
     for spring in self.springs.iter() {
       let force = spring.calculate_force(&self.points[spring.a], &self.points[spring.b]);
@@ -107,8 +107,19 @@ impl Shape {
         angle_s * frame_pos.x + angle_c * frame_pos.y + self.position.y,
       );
 
-      self.points[i].apply_gravity(GRAVITY);
-      self.points[i].update(delta_time);
+      let point = &mut self.points[i];
+
+      if point.velocity.length() != 0.0 {
+        let drag = DRAG_COEFFICIENT
+          * point.diameter
+          * point.velocity.length()
+          * point.velocity.length()
+          * -point.velocity.normalize();
+        point.apply_force(drag);
+      }
+
+      point.apply_gravity(GRAVITY);
+      point.update(delta_time);
     }
 
     let mut min = Vec2::new(INFINITY, INFINITY);
@@ -144,9 +155,9 @@ impl Shape {
   }
 
   pub fn draw(&self) {
-    self.springs.iter().for_each(|spring| {
-      spring.draw(&self.points[spring.a], &self.points[spring.b]);
-    });
+    // self.springs.iter().for_each(|spring| {
+    //   spring.draw(&self.points[spring.a], &self.points[spring.b]);
+    // });
 
     // self.frame_springs.iter().for_each(|spring| {
     //   spring.draw(&self.points[spring.a], &self.frame_points[spring.b]);

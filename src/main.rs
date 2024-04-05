@@ -62,7 +62,7 @@ async fn main() {
     (Vec2::new(190.0, 497.0), mass),
   ];
 
-  let mut shape = Shape::new(shape_points, (3000.0, 50.0), (5000.0, 100.0), true);
+  let mut shape = Shape::new(shape_points, (3000.0, 50.0), (3000.0, 50.0), false);
 
   let mut drawing = false;
   let mut drawing_points = Vec::new();

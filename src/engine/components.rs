@@ -1,3 +1,5 @@
+use std::f32::consts::PI;
+
 use macroquad::prelude::*;
 
 use super::inverse_lerp_f32;
@@ -5,6 +7,7 @@ use super::inverse_lerp_f32;
 pub struct PointMass {
   pub locked: bool,
   pub mass: f32,
+  pub diameter: f32,
   pub position: Vec2,
   pub velocity: Vec2,
   pub net_force: Vec2,
@@ -23,6 +26,7 @@ impl PointMass {
     return Self {
       locked,
       mass,
+      diameter: 2.0 * (mass / PI).sqrt(),
       position: position,
       velocity: Vec2::ZERO,
       net_force: Vec2::ZERO,
