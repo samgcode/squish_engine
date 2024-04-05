@@ -10,14 +10,14 @@ use engine::*;
 async fn main() {
   let mut shape_points = Vec::new();
 
-  let n = 5;
+  let n = 8;
   let r = 100.0;
   let mass = 15.0;
   for i in 0..n {
     shape_points.push((
       Vec2::new(
-        r * (TAU * i as f32 / n as f32).cos(),
-        r * (TAU * i as f32 / n as f32).sin(),
+        r * (TAU * (i as f32 - 0.5) / n as f32).cos(),
+        r * (TAU * (i as f32 - 0.5) / n as f32).sin(),
       ),
       mass,
     ));
@@ -25,8 +25,8 @@ async fn main() {
 
   let mut shape = Shape::new(
     shape_points,
-    Vec2::new(100.0, 100.0),
-    (1000.0, 50.0),
+    Vec2::new(200.0, 200.0),
+    (2000.0, 50.0),
     (0.0, 0.0),
     false,
   );

@@ -42,48 +42,10 @@ impl Shape {
       frame.push(point.0);
     });
 
-    springs.push(Spring::new(
-      body_springs.0,
-      (points[np - 1].position - points[0].position).length(),
-      body_springs.1,
-      np - 1,
-      0,
-    ));
-    for i in 1..np {
-      springs.push(Spring::new(
-        body_springs.0,
-        (points[i - 1].position - points[i].position).length(),
-        body_springs.1,
-        i,
-        i - 1,
-      ));
-    }
+    add_springs(&mut springs, 1, body_springs, &points);
+    add_springs(&mut springs, 2, body_springs, &points);
 
-    springs.push(Spring::new(
-      body_springs.0,
-      (points[np - 2].position - points[0].position).length(),
-      body_springs.1,
-      np - 2,
-      0,
-    ));
-    springs.push(Spring::new(
-      body_springs.0,
-      (points[np - 1].position - points[1].position).length(),
-      body_springs.1,
-      np - 1,
-      1,
-    ));
-    for i in 2..np {
-      springs.push(Spring::new(
-        body_springs.0,
-        (points[i - 2].position - points[i].position).length(),
-        body_springs.1,
-        i,
-        i - 2,
-      ));
-    }
-
-    points[0].locked = true;
+    points[np - 1].locked = true;
 
     return Self {
       bounding_box: (min, max),
@@ -98,7 +60,7 @@ impl Shape {
   }
 
   pub fn update(&mut self, delta_time: f32) {
-    self.points[0].position = mouse_position().into();
+    self.points[self.np - 1].position = mouse_position().into();
 
     for spring in self.springs.iter() {
       let force = spring.calculate_force(&self.points[spring.a], &self.points[spring.b]);
@@ -121,5 +83,36 @@ impl Shape {
     self.points.iter().for_each(|point| {
       point.draw();
     });
+  }
+}
+
+fn add_springs(
+  springs: &mut Vec<Spring>,
+  spacing: usize,
+  values: (f32, f32),
+  points: &Vec<PointMass>,
+) {
+  let np = points.len();
+
+  for i in 1..spacing + 1 {
+    springs.push(Spring::new(
+      values.0,
+      points[np - i]
+        .position
+        .distance(points[spacing - i].position),
+      values.1,
+      np - i,
+      spacing - i,
+    ));
+  }
+
+  for i in spacing..np {
+    springs.push(Spring::new(
+      values.0,
+      points[i - spacing].position.distance(points[i].position),
+      values.1,
+      i,
+      i - spacing,
+    ));
   }
 }
