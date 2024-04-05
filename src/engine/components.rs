@@ -1,5 +1,7 @@
 use macroquad::prelude::*;
 
+use super::inverse_lerp_f32;
+
 pub struct PointMass {
   pub locked: bool,
   pub mass: f32,
@@ -80,13 +82,18 @@ impl Spring {
   }
 
   pub fn draw(&self, point_a: &PointMass, point_b: &PointMass) {
+    let diff = ((point_b.position - point_a.position).length() - self.length).abs();
+
+    let v = inverse_lerp_f32(diff, 100.0, 0.0);
+    let v = (v.max(-1.0) * 255.0) as u8;
+
     draw_line(
       point_a.position.x,
       point_a.position.y,
       point_b.position.x,
       point_b.position.y,
       2.0,
-      YELLOW,
+      Color::from_rgba(255, v, 0, 255),
     );
   }
 }

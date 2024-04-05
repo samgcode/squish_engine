@@ -10,9 +10,9 @@ use engine::*;
 async fn main() {
   let mut shape_points = Vec::new();
 
-  let n = 6;
+  let n = 5;
   let r = 100.0;
-  let mass = 10.0;
+  let mass = 15.0;
   for i in 0..n {
     shape_points.push((
       Vec2::new(
