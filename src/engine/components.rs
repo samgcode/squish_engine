@@ -8,6 +8,14 @@ pub struct PointMass {
   net_force: Vec2,
 }
 
+pub struct Spring {
+  strength: f32,
+  length: f32,
+  damping: f32,
+  pub a: usize,
+  pub b: usize,
+}
+
 impl PointMass {
   pub fn new(position: Vec2, mass: f32, locked: bool) -> Self {
     return Self {
@@ -40,5 +48,34 @@ impl PointMass {
 
   pub fn apply_gravity(&mut self, force: Vec2) {
     self.net_force += force * self.mass;
+  }
+}
+
+impl Spring {
+  pub fn new(strength: f32, length: f32, damping: f32, a: usize, b: usize) -> Self {
+    return Self {
+      strength,
+      length,
+      damping,
+      a,
+      b,
+    };
+  }
+
+  pub fn calculate_force(&self, point_a: &PointMass, point_b: &PointMass) -> Vec2 {
+    let dist = (point_b.position - point_a.position).length();
+
+    if dist == 0.0 {
+      return Vec2::ZERO;
+    }
+
+    let dir = (point_b.position - point_a.position).normalize();
+    let vel_diff = point_b.velocity - point_a.velocity;
+
+    let damping_force = dir.dot(vel_diff) * self.damping;
+
+    let force = self.strength * (dist - self.length) + damping_force;
+
+    return force * dir;
   }
 }

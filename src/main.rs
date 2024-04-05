@@ -26,7 +26,7 @@ async fn main() {
   let mut shape = Shape::new(
     shape_points,
     Vec2::new(100.0, 100.0),
-    (0.0, 0.0),
+    (1000.0, 50.0),
     (0.0, 0.0),
     false,
   );

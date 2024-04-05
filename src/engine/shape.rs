@@ -4,7 +4,7 @@ use macroquad::prelude::*;
 
 use crate::config::GRAVITY;
 
-use super::PointMass;
+use super::*;
 
 pub struct Shape {
   bounding_box: (Vec2, Vec2),
@@ -13,6 +13,7 @@ pub struct Shape {
   rotation: f32,
   frame: Vec<Vec2>,
   points: Vec<PointMass>,
+  springs: Vec<Spring>,
 }
 
 impl Shape {
@@ -28,6 +29,7 @@ impl Shape {
 
     let mut points = Vec::new();
     let mut frame = Vec::new();
+    let mut springs = Vec::new();
 
     input_points.iter().for_each(|point| {
       min = min.min(point.0);
@@ -37,6 +39,25 @@ impl Shape {
       frame.push(point.0);
     });
 
+    springs.push(Spring::new(
+      body_springs.0,
+      (points[points.len() - 1].position - points[0].position).length(),
+      body_springs.1,
+      points.len() - 1,
+      0,
+    ));
+    for i in 1..points.len() {
+      springs.push(Spring::new(
+        body_springs.0,
+        (points[i - 1].position - points[i].position).length(),
+        body_springs.1,
+        i,
+        i - 1,
+      ));
+    }
+
+    points[0].locked = true;
+
     return Self {
       bounding_box: (min, max),
       lock_frame,
@@ -44,11 +65,18 @@ impl Shape {
       rotation: 0.0,
       frame,
       points,
+      springs,
     };
   }
 
   pub fn update(&mut self, delta_time: f32) {
     self.points[0].position = mouse_position().into();
+
+    for spring in self.springs.iter() {
+      let force = spring.calculate_force(&self.points[spring.a], &self.points[spring.b]);
+      self.points[spring.a].apply_force(force);
+      self.points[spring.b].apply_force(-force);
+    }
 
     self.points.iter_mut().for_each(|point| {
       point.apply_gravity(GRAVITY);
