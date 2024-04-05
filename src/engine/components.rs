@@ -78,4 +78,15 @@ impl Spring {
 
     return force * dir;
   }
+
+  pub fn draw(&self, point_a: &PointMass, point_b: &PointMass) {
+    draw_line(
+      point_a.position.x,
+      point_a.position.y,
+      point_b.position.x,
+      point_b.position.y,
+      2.0,
+      YELLOW,
+    );
+  }
 }

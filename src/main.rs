@@ -11,7 +11,7 @@ async fn main() {
   let mut shape_points = Vec::new();
 
   let n = 6;
-  let r = 50.0;
+  let r = 100.0;
   let mass = 10.0;
   for i in 0..n {
     shape_points.push((

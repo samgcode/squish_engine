@@ -13,6 +13,7 @@ pub struct Shape {
   rotation: f32,
   frame: Vec<Vec2>,
   points: Vec<PointMass>,
+  np: usize,
   springs: Vec<Spring>,
 }
 
@@ -31,6 +32,8 @@ impl Shape {
     let mut frame = Vec::new();
     let mut springs = Vec::new();
 
+    let np = input_points.len();
+
     input_points.iter().for_each(|point| {
       min = min.min(point.0);
       max = max.max(point.0);
@@ -41,18 +44,42 @@ impl Shape {
 
     springs.push(Spring::new(
       body_springs.0,
-      (points[points.len() - 1].position - points[0].position).length(),
+      (points[np - 1].position - points[0].position).length(),
       body_springs.1,
-      points.len() - 1,
+      np - 1,
       0,
     ));
-    for i in 1..points.len() {
+    for i in 1..np {
       springs.push(Spring::new(
         body_springs.0,
         (points[i - 1].position - points[i].position).length(),
         body_springs.1,
         i,
         i - 1,
+      ));
+    }
+
+    springs.push(Spring::new(
+      body_springs.0,
+      (points[np - 2].position - points[0].position).length(),
+      body_springs.1,
+      np - 2,
+      0,
+    ));
+    springs.push(Spring::new(
+      body_springs.0,
+      (points[np - 1].position - points[1].position).length(),
+      body_springs.1,
+      np - 1,
+      1,
+    ));
+    for i in 2..np {
+      springs.push(Spring::new(
+        body_springs.0,
+        (points[i - 2].position - points[i].position).length(),
+        body_springs.1,
+        i,
+        i - 2,
       ));
     }
 
@@ -65,6 +92,7 @@ impl Shape {
       rotation: 0.0,
       frame,
       points,
+      np,
       springs,
     };
   }
@@ -86,6 +114,10 @@ impl Shape {
   }
 
   pub fn draw(&self) {
+    self.springs.iter().for_each(|spring| {
+      spring.draw(&self.points[spring.a], &self.points[spring.b]);
+    });
+
     self.points.iter().for_each(|point| {
       point.draw();
     });
