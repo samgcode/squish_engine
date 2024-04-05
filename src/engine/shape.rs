@@ -85,39 +85,8 @@ impl Shape {
       self.points[spring.a].apply_force(force);
     }
 
-    let mut min = Vec2::new(INFINITY, INFINITY);
-    let mut max = Vec2::ZERO;
-
-    let mut total_position = Vec2::ZERO;
-    let mut total_angle = 0.0;
-
     let angle_c = self.rotation.cos();
     let angle_s = self.rotation.sin();
-
-    for (i, point) in self.points.iter().enumerate() {
-      min = min.min(point.position);
-      max = max.max(point.position);
-
-      if !self.lock_frame {
-        total_position += point.position;
-
-        let frame_point = self.frame[i];
-
-        let frame_point = Vec2::new(
-          angle_c * frame_point.x - angle_s * frame_point.y,
-          angle_s * frame_point.x + angle_c * frame_point.y,
-        );
-
-        total_angle += frame_point.angle_between(point.position - self.position);
-      }
-    }
-
-    self.bounding_box = (min, max);
-
-    if !self.lock_frame {
-      self.position = total_position / self.points.len() as f32;
-      self.rotation += total_angle / self.points.len() as f32;
-    }
 
     for i in 0..self.np {
       let frame_pos = self.frame[i];
@@ -128,6 +97,37 @@ impl Shape {
 
       self.points[i].apply_gravity(GRAVITY);
       self.points[i].update(delta_time);
+    }
+
+    let mut min = Vec2::new(INFINITY, INFINITY);
+    let mut max = Vec2::ZERO;
+
+    let mut total_position = Vec2::ZERO;
+    let mut total_velocity = Vec2::ZERO;
+    let mut total_angle = 0.0;
+
+    for (i, point) in self.points.iter().enumerate() {
+      min = min.min(point.position);
+      max = max.max(point.position);
+
+      if !self.lock_frame {
+        total_position += point.position;
+        total_velocity += point.velocity;
+
+        let frame_point = self.frame_points[i].position - self.position;
+
+        total_angle += frame_point.angle_between(point.position - self.position);
+      }
+    }
+
+    self.bounding_box = (min, max);
+
+    if !self.lock_frame {
+      self.position = total_position / self.np as f32;
+      self.position += total_velocity / self.np as f32 * delta_time;
+
+      self.rotation += total_angle / self.np as f32;
+      self.rotation += total_angle / self.np as f32 * delta_time;
     }
   }
 
@@ -144,15 +144,8 @@ impl Shape {
       point.draw();
     });
 
-    let angle_c = self.rotation.cos();
-    let angle_s = self.rotation.sin();
-
-    self.frame.iter().for_each(|frame_point| {
-      let point = Vec2::new(
-        angle_c * frame_point.x - angle_s * frame_point.y + self.position.x,
-        angle_s * frame_point.x + angle_c * frame_point.y + self.position.y,
-      );
-      draw_circle_vec(point, 4.0, GRAY);
+    self.frame_points.iter().for_each(|point| {
+      draw_circle_vec(point.position, 4.0, GRAY);
     });
     draw_circle_vec(self.position, 5.0, RED);
   }

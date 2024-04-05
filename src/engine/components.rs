@@ -7,7 +7,7 @@ pub struct PointMass {
   pub mass: f32,
   pub position: Vec2,
   pub velocity: Vec2,
-  net_force: Vec2,
+  pub net_force: Vec2,
 }
 
 pub struct Spring {

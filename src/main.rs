@@ -34,7 +34,7 @@ async fn main() {
   loop {
     let delta_time = get_frame_time();
 
-    let mouse_position: Vec2 = mouse_position().into();
+    // let mouse_position: Vec2 = mouse_position().into();
 
     if is_mouse_button_pressed(MouseButton::Left) {}
 
