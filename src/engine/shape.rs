@@ -13,24 +13,29 @@ pub struct Shape {
   rotation: f32,
   frame: Vec<Vec2>,
   points: Vec<PointMass>,
+  frame_points: Vec<PointMass>,
   np: usize,
   springs: Vec<Spring>,
+  frame_springs: Vec<Spring>,
 }
 
 impl Shape {
   pub fn new(
     input_points: Vec<(Vec2, f32)>,
     position: Vec2,
-    body_springs: (f32, f32),
-    frame_springs: (f32, f32),
+    body_strength: (f32, f32),
+    frame_strength: (f32, f32),
     lock_frame: bool,
   ) -> Self {
     let mut min = Vec2::new(INFINITY, INFINITY);
     let mut max = Vec2::ZERO;
 
     let mut points = Vec::new();
+    let mut frame_points = Vec::new();
     let mut frame = Vec::new();
+
     let mut springs = Vec::new();
+    let mut frame_springs = Vec::new();
 
     let np = input_points.len();
 
@@ -39,11 +44,16 @@ impl Shape {
       max = max.max(point.0);
 
       points.push(PointMass::new(point.0 + position, point.1, false));
+      frame_points.push(PointMass::new(point.0 + position, 0.0, false));
       frame.push(point.0);
     });
 
-    add_springs(&mut springs, 1, body_springs, &points);
-    add_springs(&mut springs, 2, body_springs, &points);
+    add_springs(&mut springs, 1, body_strength, &points);
+    add_springs(&mut springs, 2, body_strength, &points);
+
+    for i in 0..np {
+      frame_springs.push(Spring::new(frame_strength.0, 0.0, frame_strength.1, i, i));
+    }
 
     points[np - 1].locked = true;
 
@@ -54,8 +64,10 @@ impl Shape {
       rotation: 0.0,
       frame,
       points,
+      frame_points,
       np,
       springs,
+      frame_springs,
     };
   }
 
@@ -68,11 +80,55 @@ impl Shape {
       self.points[spring.b].apply_force(-force);
     }
 
-    self.points.iter_mut().for_each(|point| {
-      point.apply_gravity(GRAVITY);
+    for spring in self.frame_springs.iter() {
+      let force = spring.calculate_force(&self.points[spring.a], &self.frame_points[spring.b]);
+      self.points[spring.a].apply_force(force);
+    }
 
-      point.update(delta_time);
-    });
+    let mut min = Vec2::new(INFINITY, INFINITY);
+    let mut max = Vec2::ZERO;
+
+    let mut total_position = Vec2::ZERO;
+    let mut total_angle = 0.0;
+
+    let angle_c = self.rotation.cos();
+    let angle_s = self.rotation.sin();
+
+    for (i, point) in self.points.iter().enumerate() {
+      min = min.min(point.position);
+      max = max.max(point.position);
+
+      if !self.lock_frame {
+        total_position += point.position;
+
+        let frame_point = self.frame[i];
+
+        let frame_point = Vec2::new(
+          angle_c * frame_point.x - angle_s * frame_point.y,
+          angle_s * frame_point.x + angle_c * frame_point.y,
+        );
+
+        total_angle += frame_point.angle_between(point.position - self.position);
+      }
+    }
+
+    self.bounding_box = (min, max);
+
+    if !self.lock_frame {
+      self.position = total_position / self.points.len() as f32;
+      self.rotation += total_angle / self.points.len() as f32;
+    }
+
+    for i in 0..self.np {
+      let frame_pos = self.frame[i];
+      self.frame_points[i].position = Vec2::new(
+        angle_c * frame_pos.x - angle_s * frame_pos.y + self.position.x,
+        angle_s * frame_pos.x + angle_c * frame_pos.y + self.position.y,
+      );
+
+      self.points[i].apply_gravity(GRAVITY);
+      self.points[i].update(delta_time);
+    }
   }
 
   pub fn draw(&self) {
@@ -80,9 +136,25 @@ impl Shape {
       spring.draw(&self.points[spring.a], &self.points[spring.b]);
     });
 
+    self.frame_springs.iter().for_each(|spring| {
+      spring.draw(&self.points[spring.a], &self.frame_points[spring.b]);
+    });
+
     self.points.iter().for_each(|point| {
       point.draw();
     });
+
+    let angle_c = self.rotation.cos();
+    let angle_s = self.rotation.sin();
+
+    self.frame.iter().for_each(|frame_point| {
+      let point = Vec2::new(
+        angle_c * frame_point.x - angle_s * frame_point.y + self.position.x,
+        angle_s * frame_point.x + angle_c * frame_point.y + self.position.y,
+      );
+      draw_circle_vec(point, 4.0, GRAY);
+    });
+    draw_circle_vec(self.position, 5.0, RED);
   }
 }
 
