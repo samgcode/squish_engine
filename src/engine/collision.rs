@@ -6,6 +6,7 @@ use super::{math::*, Shape, *};
 
 const EPS: f32 = 0.00001;
 const ELASTICITY: f32 = 0.8;
+const FRICTION_COEFFICIENT: f32 = 0.2;
 
 pub struct Collision {
   d: f32,
@@ -42,8 +43,15 @@ pub fn resolve_point_line(
   let p_vel_f = (point.velocity - p * l_mass * collision.normal) * ELASTICITY;
   let l_vel_f = (l_vel + p * point.mass * collision.normal) * ELASTICITY;
 
-  draw_circle_vec(point_a.position, 5.0, GREEN);
-  draw_circle_vec(point_b.position, 5.0, GREEN);
+  let perpendicular_n = point_a.position - collision.point;
+  let friction_force = if perpendicular_n.length() != 0.0 {
+    let perpendicular_n = perpendicular_n.normalize();
+    perpendicular_n * perpendicular_n.dot(p_vel_f) * FRICTION_COEFFICIENT
+  } else {
+    Vec2::ZERO
+  };
+
+  let p_vel_f = p_vel_f - friction_force;
 
   point.add_position(p_dist);
   point.set_velocity(p_vel_f);
