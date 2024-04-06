@@ -10,7 +10,6 @@ pub struct PointMass {
   pub diameter: f32,
   pub position: Vec2,
   pub velocity: Vec2,
-  pub net_force: Vec2,
 }
 
 pub struct Spring {
@@ -29,7 +28,6 @@ impl PointMass {
       diameter: 2.0 * (mass / PI).sqrt(),
       position: position,
       velocity: Vec2::ZERO,
-      net_force: Vec2::ZERO,
     };
   }
 
@@ -38,10 +36,7 @@ impl PointMass {
       return;
     }
 
-    self.velocity += self.net_force / self.mass * delta_time;
     self.position += self.velocity * delta_time;
-
-    self.net_force = Vec2::ZERO;
   }
 
   pub fn draw(&self) {
@@ -49,11 +44,11 @@ impl PointMass {
   }
 
   pub fn apply_force(&mut self, force: Vec2) {
-    self.net_force += force;
+    self.velocity += force / self.mass;
   }
 
   pub fn apply_gravity(&mut self, force: Vec2) {
-    self.net_force += force * self.mass;
+    self.velocity += force;
   }
 }
 

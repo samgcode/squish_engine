@@ -56,15 +56,14 @@ impl Shape {
 
     add_springs(&mut springs, 1, body_strength, &points);
     add_springs(&mut springs, 2, body_strength, &points);
-    // add_springs(&mut springs, 8, body_strength, &points);
-    // add_springs(&mut springs, 15, body_strength, &points);
+    add_springs(&mut springs, 3, body_strength, &points);
 
     for i in 0..np {
       frame_springs.push(Spring::new(frame_strength.0, 0.0, frame_strength.1, i, i));
     }
 
     // points[np - 1].locked = true;
-    points[0].apply_force(Vec2::new(10000.0, 10000.0));
+    // points[0].apply_force(Vec2::new(10000.0, 10000.0));
 
     return Self {
       bounding_box: (min, max),
@@ -83,18 +82,61 @@ impl Shape {
   pub fn update(&mut self, delta_time: f32) {
     if is_mouse_button_down(MouseButton::Left) {
       self.points[self.np - 1].position = mouse_position().into();
-      // self.position = mouse_position().into();
+      self.points[self.np - 1].velocity = Vec2::ZERO;
+    }
+
+    for point in self.points.iter_mut() {
+      point.apply_gravity(GRAVITY * delta_time);
+      point.update(delta_time);
     }
 
     for spring in self.springs.iter() {
       let force = spring.calculate_force(&self.points[spring.a], &self.points[spring.b]);
-      self.points[spring.a].apply_force(force);
-      self.points[spring.b].apply_force(-force);
+
+      self.points[spring.a].apply_force(force * delta_time);
+      self.points[spring.b].apply_force(-force * delta_time);
     }
 
-    for spring in self.frame_springs.iter() {
-      let force = spring.calculate_force(&self.points[spring.a], &self.frame_points[spring.b]);
-      self.points[spring.a].apply_force(force);
+    for i in 0..self.np {
+      let point = &mut self.points[i];
+
+      if point.velocity.length() != 0.0 {
+        let drag = DRAG_COEFFICIENT
+          * point.diameter
+          * point.velocity.length()
+          * point.velocity.length()
+          * -point.velocity.normalize();
+        point.apply_force(drag * delta_time);
+      }
+    }
+
+    let mut min = Vec2::new(INFINITY, INFINITY);
+    let mut max = Vec2::ZERO;
+
+    let mut total_position = Vec2::ZERO;
+
+    for point in self.points.iter() {
+      min = min.min(point.position);
+      max = max.max(point.position);
+
+      total_position += point.position;
+    }
+
+    self.bounding_box = (min, max);
+
+    if !self.lock_frame {
+      self.position = total_position / self.np as f32;
+
+      let mut a = 0.0;
+      let mut b = 0.0;
+      for (i, v) in self.points.iter().enumerate() {
+        let r = v.position - self.position;
+        a += r.dot(self.frame[i]);
+        b += cross(r, self.frame[i]);
+      }
+      let angle = -(b.atan2(a));
+
+      self.rotation = angle;
     }
 
     let angle_c = self.rotation.cos();
@@ -106,62 +148,23 @@ impl Shape {
         angle_c * frame_pos.x - angle_s * frame_pos.y + self.position.x,
         angle_s * frame_pos.x + angle_c * frame_pos.y + self.position.y,
       );
-
-      let point = &mut self.points[i];
-
-      if point.velocity.length() != 0.0 {
-        let drag = DRAG_COEFFICIENT
-          * point.diameter
-          * point.velocity.length()
-          * point.velocity.length()
-          * -point.velocity.normalize();
-        point.apply_force(drag);
-      }
-
-      point.apply_gravity(GRAVITY);
-      point.update(delta_time);
     }
 
-    let mut min = Vec2::new(INFINITY, INFINITY);
-    let mut max = Vec2::ZERO;
-
-    let mut total_position = Vec2::ZERO;
-    let mut total_velocity = Vec2::ZERO;
-    let mut total_angle = 0.0;
-
-    for (i, point) in self.points.iter().enumerate() {
-      min = min.min(point.position);
-      max = max.max(point.position);
-
-      if !self.lock_frame {
-        total_position += point.position;
-        total_velocity += point.velocity;
-
-        let frame_point = self.frame_points[i].position - self.position;
-
-        total_angle += frame_point.angle_between(point.position - self.position);
-      }
-    }
-
-    self.bounding_box = (min, max);
-
-    if !self.lock_frame {
-      self.position = total_position / self.np as f32;
-      // self.position += total_velocity / self.np as f32 * delta_time;
-
-      self.rotation += total_angle / self.np as f32;
-      // self.rotation += total_angle / self.np as f32 * delta_time;
+    for spring in self.frame_springs.iter() {
+      let a = &mut self.points[spring.a];
+      let force = spring.calculate_force(a, &self.frame_points[spring.b]);
+      a.velocity += force / a.mass * delta_time;
     }
   }
 
   pub fn draw(&self) {
-    // self.springs.iter().for_each(|spring| {
-    //   spring.draw(&self.points[spring.a], &self.points[spring.b]);
-    // });
+    self.springs.iter().for_each(|spring| {
+      spring.draw(&self.points[spring.a], &self.points[spring.b]);
+    });
 
-    // self.frame_springs.iter().for_each(|spring| {
-    //   spring.draw(&self.points[spring.a], &self.frame_points[spring.b]);
-    // });
+    self.frame_springs.iter().for_each(|spring| {
+      spring.draw(&self.points[spring.a], &self.frame_points[spring.b]);
+    });
 
     self.points.iter().for_each(|point| {
       point.draw();

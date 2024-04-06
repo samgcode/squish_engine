@@ -10,7 +10,7 @@ use engine::*;
 async fn main() {
   let mut shape_points = Vec::new();
 
-  let n = 20;
+  let n = 8;
   let r = 150.0;
   let mass = 10.0;
   for i in 0..n {
@@ -62,7 +62,7 @@ async fn main() {
     (Vec2::new(190.0, 497.0), mass),
   ];
 
-  let mut shape = Shape::new(shape_points, (3000.0, 50.0), (3000.0, 50.0), false);
+  let mut shape = Shape::new(shape_points, (5000.0, 150.0), (3000.0, 50.0), false);
 
   let mut drawing = false;
   let mut drawing_points = Vec::new();
