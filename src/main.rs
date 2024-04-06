@@ -1,3 +1,4 @@
+use config::GRAVITY;
 use macroquad::prelude::*;
 use std::f32::consts::TAU;
 
@@ -10,8 +11,8 @@ use engine::*;
 async fn main() {
   let mut shape_points = Vec::new();
 
-  let n = 8;
-  let r = 150.0;
+  let n = 6;
+  let r = 75.0;
   let mass = 10.0;
   for i in 0..n {
     shape_points.push((
@@ -23,7 +24,26 @@ async fn main() {
     ));
   }
 
-  let shape_points = vec![
+  let platform_points = vec![
+    (Vec2::new(72.0, 266.0), mass),
+    (Vec2::new(116.0, 329.0), mass),
+    (Vec2::new(160.0, 363.0), mass),
+    (Vec2::new(201.0, 390.0), mass),
+    (Vec2::new(268.0, 431.0), mass),
+    (Vec2::new(318.0, 457.0), mass),
+    (Vec2::new(377.0, 461.0), mass),
+    (Vec2::new(470.0, 478.0), mass),
+    (Vec2::new(520.0, 487.0), mass),
+    (Vec2::new(603.0, 500.0), mass),
+    (Vec2::new(609.0, 558.0), mass),
+    (Vec2::new(408.0, 562.0), mass),
+    (Vec2::new(236.0, 563.0), mass),
+    (Vec2::new(63.0, 546.0), mass),
+    (Vec2::new(43.0, 382.0), mass),
+    (Vec2::new(40.0, 262.0), mass),
+  ];
+
+  let _skrungle_points = vec![
     (Vec2::new(164.0, 479.0), mass),
     (Vec2::new(166.0, 372.0), mass),
     (Vec2::new(166.0, 263.0), mass),
@@ -62,7 +82,10 @@ async fn main() {
     (Vec2::new(190.0, 497.0), mass),
   ];
 
-  let mut shape = Shape::new(shape_points, (10000.0, 300.0), (3000.0, 0.0), false, 0.1);
+  let p_mass = 50.0;
+  let mut point: PointMass = PointMass::new(Vec2::new(200.0, 200.0), p_mass, false);
+  let mut shape = Shape::new(shape_points, (10000.0, 300.0), (3000.0, 0.0), false, 1.0);
+  let mut platform = Shape::new(platform_points, (10000.0, 300.0), (3000.0, 0.0), true, 1.0);
 
   let mut drawing = false;
   let mut drawing_points = Vec::new();
@@ -93,8 +116,24 @@ async fn main() {
         draw_circle_vec(*point, 4.0, WHITE);
       }
     } else {
-      shape.update(delta_time);
-      shape.draw();
+      if is_key_pressed(KeyCode::A) {
+        let mouse_pos: Vec2 = mouse_position().into();
+        point = PointMass::new(mouse_pos, p_mass, false);
+      }
+
+      point.apply_gravity(GRAVITY * delta_time);
+
+      // shape.update(delta_time);
+      platform.update(delta_time);
+      point.update(delta_time);
+
+      if let Some(collision) = point_shape_collision(point.position, &platform) {
+        resolve_point_line(&mut point, &mut platform, collision, delta_time);
+      }
+
+      // shape.draw();
+      platform.draw();
+      point.draw();
     }
 
     next_frame().await;

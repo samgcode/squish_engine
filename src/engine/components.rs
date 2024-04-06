@@ -39,6 +39,14 @@ impl PointMass {
     self.position += self.velocity * delta_time;
   }
 
+  pub fn add_position(&mut self, dist: Vec2) {
+    self.position += dist;
+  }
+
+  pub fn set_velocity(&mut self, vel: Vec2) {
+    self.velocity = vel;
+  }
+
   pub fn draw(&self) {
     draw_circle(self.position.x, self.position.y, 5.0, WHITE);
   }

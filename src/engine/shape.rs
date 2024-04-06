@@ -7,12 +7,12 @@ use crate::config::*;
 use super::*;
 
 pub struct Shape {
-  bounding_box: (Vec2, Vec2),
+  pub bounding_box: (Vec2, Vec2),
   lock_frame: bool,
   position: Vec2,
   rotation: f32,
   frame: Vec<Vec2>,
-  points: Vec<PointMass>,
+  pub points: Vec<PointMass>,
   frame_points: Vec<PointMass>,
   np: usize,
   springs: Vec<Spring>,
@@ -58,9 +58,6 @@ impl Shape {
 
     add_springs(&mut springs, 1, body_strength, &points);
     add_springs(&mut springs, 2, body_strength, &points);
-    add_springs(&mut springs, 3, body_strength, &points);
-    add_springs(&mut springs, 6, body_strength, &points);
-    add_springs(&mut springs, 8, body_strength, &points);
 
     for i in 0..np {
       frame_springs.push(Spring::new(frame_strength.0, 0.0, frame_strength.1, i, i));
@@ -84,7 +81,7 @@ impl Shape {
   }
 
   pub fn update(&mut self, delta_time: f32) {
-    if is_mouse_button_down(MouseButton::Left) {
+    if is_mouse_button_down(MouseButton::Left) && !self.lock_frame {
       self.points[self.np - 1].position = mouse_position().into();
       self.points[self.np - 1].velocity = Vec2::ZERO;
     }
@@ -162,13 +159,13 @@ impl Shape {
   }
 
   pub fn draw(&self) {
-    // self.springs.iter().for_each(|spring| {
-    //   spring.draw(&self.points[spring.a], &self.points[spring.b]);
-    // });
+    self.springs.iter().for_each(|spring| {
+      spring.draw(&self.points[spring.a], &self.points[spring.b]);
+    });
 
-    // self.frame_springs.iter().for_each(|spring| {
-    //   spring.draw(&self.points[spring.a], &self.frame_points[spring.b]);
-    // });
+    self.frame_springs.iter().for_each(|spring| {
+      spring.draw(&self.points[spring.a], &self.frame_points[spring.b]);
+    });
 
     // self.points.iter().for_each(|point| {
     //   point.draw();
@@ -193,6 +190,15 @@ impl Shape {
     //   draw_circle_vec(point.position, 4.0, GRAY);
     // });
     // draw_circle_vec(self.position, 5.0, RED);
+
+    draw_rectangle_lines(
+      self.bounding_box.0.x,
+      self.bounding_box.0.y,
+      self.bounding_box.1.x - self.bounding_box.0.x,
+      self.bounding_box.1.y - self.bounding_box.0.y,
+      2.0,
+      WHITE,
+    );
   }
 }
 
