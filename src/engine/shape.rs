@@ -25,6 +25,7 @@ impl Shape {
     body_strength: (f32, f32),
     frame_strength: (f32, f32),
     lock_frame: bool,
+    scale: f32,
   ) -> Self {
     let mut min = Vec2::new(INFINITY, INFINITY);
     let mut max = Vec2::ZERO;
@@ -49,14 +50,17 @@ impl Shape {
     let position = total_position / np as f32;
 
     input_points.iter().for_each(|point| {
-      points.push(PointMass::new(point.0, point.1, false));
-      frame_points.push(PointMass::new(point.0 - position, 0.0, false));
-      frame.push(point.0 - position);
+      let r = point.0 - position;
+      points.push(PointMass::new(r * scale + position, point.1, false));
+      frame_points.push(PointMass::new(r * scale, 0.0, false));
+      frame.push(r * scale);
     });
 
     add_springs(&mut springs, 1, body_strength, &points);
     add_springs(&mut springs, 2, body_strength, &points);
     add_springs(&mut springs, 3, body_strength, &points);
+    add_springs(&mut springs, 6, body_strength, &points);
+    add_springs(&mut springs, 8, body_strength, &points);
 
     for i in 0..np {
       frame_springs.push(Spring::new(frame_strength.0, 0.0, frame_strength.1, i, i));
@@ -158,17 +162,17 @@ impl Shape {
   }
 
   pub fn draw(&self) {
-    self.springs.iter().for_each(|spring| {
-      spring.draw(&self.points[spring.a], &self.points[spring.b]);
-    });
+    // self.springs.iter().for_each(|spring| {
+    //   spring.draw(&self.points[spring.a], &self.points[spring.b]);
+    // });
 
-    self.frame_springs.iter().for_each(|spring| {
-      spring.draw(&self.points[spring.a], &self.frame_points[spring.b]);
-    });
+    // self.frame_springs.iter().for_each(|spring| {
+    //   spring.draw(&self.points[spring.a], &self.frame_points[spring.b]);
+    // });
 
-    self.points.iter().for_each(|point| {
-      point.draw();
-    });
+    // self.points.iter().for_each(|point| {
+    //   point.draw();
+    // });
 
     draw_line_vec(
       self.points[self.np - 1].position,
@@ -185,10 +189,10 @@ impl Shape {
       );
     }
 
-    self.frame_points.iter().for_each(|point| {
-      draw_circle_vec(point.position, 4.0, GRAY);
-    });
-    draw_circle_vec(self.position, 5.0, RED);
+    // self.frame_points.iter().for_each(|point| {
+    //   draw_circle_vec(point.position, 4.0, GRAY);
+    // });
+    // draw_circle_vec(self.position, 5.0, RED);
   }
 }
 
