@@ -16,6 +16,14 @@ pub struct Collision {
   line: (usize, usize),
 }
 
+pub fn shape_shape_collision(shape_a: &mut Shape, shape_b: &mut Shape, delta_time: f32) {
+  for point in shape_a.points.iter_mut() {
+    if let Some(collision) = point_shape_collision(point.position, shape_b) {
+      resolve_point_line(point, shape_b, collision, delta_time);
+    }
+  }
+}
+
 pub fn resolve_point_line(
   point: &mut PointMass,
   shape: &mut Shape,
@@ -111,6 +119,7 @@ pub fn point_shape_collision(point: Vec2, shape: &Shape) -> Option<Collision> {
   let mut closest_d = INFINITY;
   let mut closest_point = Vec2::ZERO;
   let mut closest_line = (Vec2::ZERO, Vec2::ZERO, 0, 0);
+  let mut closest_n = Vec2::ZERO;
 
   let mut prev_a = np - 1;
 
@@ -118,28 +127,25 @@ pub fn point_shape_collision(point: Vec2, shape: &Shape) -> Option<Collision> {
     let a = shape.points[prev_a].position;
     let b = shape.points[i].position;
 
-    let (close_point, d) = closest_point_on_line(point, (b, a));
+    let (close_point, d, n) = closest_point_on_line(point, (b, a));
 
+    // draw_circle_vec(close_point, 5.0, BLUE);
     if d < closest_d {
       closest_d = d;
       closest_point = close_point;
       closest_line = (b, a, i, prev_a);
+      closest_n = n;
     }
 
     prev_a = i;
   }
+  // draw_circle_vec(closest_point, 5.0, RED);
 
   let line_t = inverse_lerp_vec(closest_point, closest_line.0, closest_line.1);
 
-  let n = if closest_d != 0.0 {
-    (closest_point - point) / closest_d
-  } else {
-    Vec2::ZERO
-  };
-
   return Some(Collision {
     d: closest_d,
-    normal: n,
+    normal: closest_n,
     t: line_t,
     point: closest_point,
     line: (closest_line.2, closest_line.3),
@@ -168,32 +174,24 @@ fn get_intersection_point(ray: (Vec2, Vec2), line: (Vec2, Vec2)) -> Option<Vec2>
   });
 }
 
-pub fn closest_point_on_line(point: Vec2, line: (Vec2, Vec2)) -> (Vec2, f32) {
-  let dv = Vec2::new(line.1.x - line.0.x, line.1.y - line.0.y).normalize();
+pub fn closest_point_on_line(point: Vec2, line: (Vec2, Vec2)) -> (Vec2, f32, Vec2) {
+  let dv = (line.1 - line.0).normalize();
   let (dx, dy) = (dv.x, dv.y);
 
-  let c = dy * line.0.x - dx * line.0.y;
-  let d = (dy * point.x - dx * point.y - c) / (dy * dy + dx * dx).sqrt();
+  let n = Vec2::new(-dy, dx);
+  let m = dy / dx;
+  let b = line.0.y - m * line.0.x;
 
-  let close_point = Vec2::new(point.x + -dy * d, point.y + dx * d);
+  let d = (m * point.x - point.y + b) / (n.y - m * n.x);
+  let close_point = d * n + point;
 
-  let max_x = line.0.x.max(line.1.x);
-  let max_y = line.0.y.max(line.1.y);
-  let min_x = line.0.x.min(line.1.x);
-  let min_y = line.0.y.min(line.1.y);
+  let t = inverse_lerp_vec(close_point, line.0, line.1);
 
-  if close_point.x > max_x
-    || close_point.y > max_y
-    || close_point.x < min_x
-    || close_point.y < min_y
-  {
-    let dist_0 = point.distance(line.0);
-    let dist_1 = point.distance(line.1);
-    if dist_0 < dist_1 {
-      return (line.0, dist_0);
-    }
-    return (line.1, dist_1);
+  if t <= 1.0 && t >= 0.0 {
+    return (close_point, d.abs(), n);
   }
-
-  return (close_point, d);
+  if t > 1.0 {
+    return (line.1, point.distance(line.1), n);
+  }
+  return (line.0, point.distance(line.0), n);
 }

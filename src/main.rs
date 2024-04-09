@@ -11,8 +11,8 @@ use engine::*;
 async fn main() {
   let mut shape_points = Vec::new();
 
-  let n = 6;
-  let r = 75.0;
+  let n = 12;
+  let r = 50.0;
   let mass = 10.0;
   for i in 0..n {
     shape_points.push((
@@ -25,22 +25,58 @@ async fn main() {
   }
 
   let platform_points = vec![
-    (Vec2::new(72.0, 266.0), mass),
-    (Vec2::new(116.0, 329.0), mass),
-    (Vec2::new(160.0, 363.0), mass),
-    (Vec2::new(201.0, 390.0), mass),
-    (Vec2::new(268.0, 431.0), mass),
-    (Vec2::new(318.0, 457.0), mass),
-    (Vec2::new(377.0, 461.0), mass),
-    (Vec2::new(470.0, 478.0), mass),
-    (Vec2::new(520.0, 487.0), mass),
-    (Vec2::new(603.0, 500.0), mass),
-    (Vec2::new(609.0, 558.0), mass),
-    (Vec2::new(408.0, 562.0), mass),
-    (Vec2::new(236.0, 563.0), mass),
-    (Vec2::new(63.0, 546.0), mass),
-    (Vec2::new(43.0, 382.0), mass),
-    (Vec2::new(40.0, 262.0), mass),
+    (Vec2::new(96.0, 53.0), mass),
+    (Vec2::new(151.0, 53.0), mass),
+    (Vec2::new(198.0, 63.0), mass),
+    (Vec2::new(209.0, 104.0), mass),
+    (Vec2::new(209.0, 149.0), mass),
+    (Vec2::new(204.0, 195.0), mass),
+    (Vec2::new(208.0, 216.0), mass),
+    (Vec2::new(245.0, 219.0), mass),
+    (Vec2::new(300.0, 228.0), mass),
+    (Vec2::new(351.0, 256.0), mass),
+    (Vec2::new(340.0, 282.0), mass),
+    (Vec2::new(288.0, 288.0), mass),
+    (Vec2::new(237.0, 312.0), mass),
+    (Vec2::new(207.0, 344.0), mass),
+    (Vec2::new(206.0, 384.0), mass),
+    (Vec2::new(215.0, 408.0), mass),
+    (Vec2::new(233.0, 440.0), mass),
+    (Vec2::new(269.0, 455.0), mass),
+    (Vec2::new(313.0, 462.0), mass),
+    (Vec2::new(448.0, 473.0), mass),
+    (Vec2::new(503.0, 469.0), mass),
+    (Vec2::new(546.0, 448.0), mass),
+    (Vec2::new(555.0, 413.0), mass),
+    (Vec2::new(521.0, 386.0), mass),
+    (Vec2::new(459.0, 382.0), mass),
+    (Vec2::new(426.0, 361.0), mass),
+    (Vec2::new(474.0, 331.0), mass),
+    (Vec2::new(540.0, 328.0), mass),
+    (Vec2::new(570.0, 305.0), mass),
+    (Vec2::new(573.0, 248.0), mass),
+    (Vec2::new(529.0, 217.0), mass),
+    (Vec2::new(483.0, 189.0), mass),
+    (Vec2::new(449.0, 158.0), mass),
+    (Vec2::new(435.0, 118.0), mass),
+    (Vec2::new(444.0, 80.0), mass),
+    (Vec2::new(505.0, 47.0), mass),
+    (Vec2::new(570.0, 41.0), mass),
+    (Vec2::new(642.0, 77.0), mass),
+    (Vec2::new(676.0, 156.0), mass),
+    (Vec2::new(675.0, 240.0), mass),
+    (Vec2::new(663.0, 353.0), mass),
+    (Vec2::new(639.0, 425.0), mass),
+    (Vec2::new(608.0, 499.0), mass),
+    (Vec2::new(523.0, 551.0), mass),
+    (Vec2::new(401.0, 571.0), mass),
+    (Vec2::new(288.0, 563.0), mass),
+    (Vec2::new(192.0, 534.0), mass),
+    (Vec2::new(126.0, 471.0), mass),
+    (Vec2::new(91.0, 382.0), mass),
+    (Vec2::new(63.0, 270.0), mass),
+    (Vec2::new(45.0, 153.0), mass),
+    (Vec2::new(56.0, 82.0), mass),
   ];
 
   let _skrungle_points = vec![
@@ -84,8 +120,14 @@ async fn main() {
 
   let p_mass = 50.0;
   let mut point: PointMass = PointMass::new(Vec2::new(200.0, 200.0), p_mass, false);
-  let mut shape = Shape::new(shape_points, (10000.0, 300.0), (3000.0, 0.0), false, 1.0);
-  let mut platform = Shape::new(platform_points, (10000.0, 300.0), (3000.0, 0.0), true, 1.0);
+  let mut shape = Shape::new(shape_points, (10000.0, 300.0), (3000.0, 0.0), false, 0.5);
+  let mut platform = Shape::new(
+    platform_points,
+    (20000.0, 300.0),
+    (7000.0, 100.0),
+    true,
+    1.0,
+  );
 
   let mut drawing = false;
   let mut drawing_points = Vec::new();
@@ -116,26 +158,29 @@ async fn main() {
         draw_circle_vec(*point, 4.0, WHITE);
       }
     } else {
-      if is_key_pressed(KeyCode::A) {
+      if is_key_down(KeyCode::A) {
         let mouse_pos: Vec2 = mouse_position().into();
         point = PointMass::new(mouse_pos, p_mass, false);
       }
 
       point.apply_gravity(GRAVITY * delta_time);
 
-      // shape.update(delta_time);
+      shape.update(delta_time);
       platform.update(delta_time);
       point.update(delta_time);
 
+      shape_shape_collision(&mut shape, &mut platform, delta_time);
       if let Some(collision) = point_shape_collision(point.position, &platform) {
         resolve_point_line(&mut point, &mut platform, collision, delta_time);
       }
+      if let Some(collision) = point_shape_collision(point.position, &shape) {
+        resolve_point_line(&mut point, &mut shape, collision, delta_time);
+      }
 
-      // shape.draw();
+      next_frame().await;
+      shape.draw();
       platform.draw();
       point.draw();
     }
-
-    next_frame().await;
   }
 }
