@@ -5,8 +5,7 @@ use macroquad::prelude::*;
 use super::{math::*, Shape, *};
 
 const EPS: f32 = 0.00001;
-const ELASTICITY: f32 = 0.8;
-const FRICTION_COEFFICIENT: f32 = 0.2;
+const FRICTION_COEFFICIENT: f32 = 0.25;
 
 pub struct Collision {
   d: f32,
@@ -45,35 +44,30 @@ pub fn resolve_point_line(
   let a_dist = p_mass_p * (1.0 - collision.t) * 2.0 * -dist;
   let b_dist = p_mass_p * collision.t * 2.0 * -dist;
 
-  let p = 2.0 * (point.velocity.dot(collision.normal) - l_vel.dot(collision.normal))
-    / (point.mass + l_mass);
+  let perpendicular_n = (point_b.position - point_a.position).normalize();
+  let friction_force = perpendicular_n * perpendicular_n.dot(point.velocity) * FRICTION_COEFFICIENT;
 
-  let p_vel_f = (point.velocity - p * l_mass * collision.normal) * ELASTICITY;
-  let l_vel_f = (l_vel + p * point.mass * collision.normal) * ELASTICITY;
+  let d = -point.velocity.normalize().dot(l_vel.normalize());
 
-  let perpendicular_n = point_a.position - collision.point;
-  let friction_force = if perpendicular_n.length() != 0.0 {
-    let perpendicular_n = perpendicular_n.normalize();
-    perpendicular_n * perpendicular_n.dot(p_vel_f) * FRICTION_COEFFICIENT
-  } else {
-    Vec2::ZERO
-  };
-
-  let p_vel_f = p_vel_f - friction_force;
+  let force = collision.normal * 10000.0 * delta_time;
+  // let l_f = -force + point.velocity * 0.25 * d;
 
   point.add_position(p_dist);
-  point.set_velocity(p_vel_f);
-  point.update(delta_time);
+  point.velocity += force + l_vel * 0.5 * d - friction_force;
+  // point.velocity += l_vel * d;
+  // point.update(delta_time);
 
   let particle = &mut shape.points[collision.line.0];
   particle.add_position(a_dist);
-  particle.set_velocity((1.0 - collision.t) * l_vel_f);
-  particle.update(delta_time);
+  particle.velocity -= force * 0.5;
+  // particle.set_velocity((1.0 - collision.t) * l_vel_f);
+  // particle.update(delta_time);
 
   let particle = &mut shape.points[collision.line.1];
   particle.add_position(b_dist);
-  particle.set_velocity(collision.t * l_vel_f);
-  particle.update(delta_time);
+  particle.velocity -= force * 0.5;
+  // particle.set_velocity(collision.t * l_vel_f);
+  // particle.update(delta_time);
 }
 
 pub fn point_shape_collision(point: Vec2, shape: &Shape) -> Option<Collision> {

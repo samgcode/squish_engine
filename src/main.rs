@@ -11,7 +11,7 @@ use engine::*;
 async fn main() {
   let mut shape_points = Vec::new();
 
-  let n = 12;
+  let n = 6;
   let r = 50.0;
   let mass = 10.0;
   for i in 0..n {
@@ -172,9 +172,6 @@ async fn main() {
       shape_shape_collision(&mut shape, &mut platform, delta_time);
       if let Some(collision) = point_shape_collision(point.position, &platform) {
         resolve_point_line(&mut point, &mut platform, collision, delta_time);
-      }
-      if let Some(collision) = point_shape_collision(point.position, &shape) {
-        resolve_point_line(&mut point, &mut shape, collision, delta_time);
       }
 
       next_frame().await;
