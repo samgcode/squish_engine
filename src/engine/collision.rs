@@ -5,6 +5,7 @@ use macroquad::prelude::*;
 use super::{math::*, Shape, *};
 
 const EPS: f32 = 0.00001;
+const ELASTICITY: f32 = 0.5;
 const FRICTION_COEFFICIENT: f32 = 0.25;
 
 pub struct Collision {
@@ -47,27 +48,24 @@ pub fn resolve_point_line(
   let perpendicular_n = (point_b.position - point_a.position).normalize();
   let friction_force = perpendicular_n * perpendicular_n.dot(point.velocity) * FRICTION_COEFFICIENT;
 
-  let d = -point.velocity.normalize().dot(l_vel.normalize());
+  let mut d = -point.velocity.normalize().dot(l_vel.normalize());
+  if d < 0.0 {
+    d = 0.0;
+  }
 
-  let force = collision.normal * 10000.0 * delta_time;
+  let force = collision.d * collision.normal * 20000.0 * ELASTICITY * delta_time;
   // let l_f = -force + point.velocity * 0.25 * d;
 
-  point.add_position(p_dist);
+  point.add_position(p_dist * 2.0);
   point.velocity += force + l_vel * 0.5 * d - friction_force;
-  // point.velocity += l_vel * d;
-  // point.update(delta_time);
 
   let particle = &mut shape.points[collision.line.0];
   particle.add_position(a_dist);
   particle.velocity -= force * 0.5;
-  // particle.set_velocity((1.0 - collision.t) * l_vel_f);
-  // particle.update(delta_time);
 
   let particle = &mut shape.points[collision.line.1];
   particle.add_position(b_dist);
   particle.velocity -= force * 0.5;
-  // particle.set_velocity(collision.t * l_vel_f);
-  // particle.update(delta_time);
 }
 
 pub fn point_shape_collision(point: Vec2, shape: &Shape) -> Option<Collision> {
