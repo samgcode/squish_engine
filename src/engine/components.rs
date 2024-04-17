@@ -43,10 +43,6 @@ impl PointMass {
     self.position += dist;
   }
 
-  pub fn set_velocity(&mut self, vel: Vec2) {
-    self.velocity = vel;
-  }
-
   pub fn draw(&self) {
     draw_circle(self.position.x, self.position.y, 5.0, WHITE);
   }

@@ -11,7 +11,7 @@ use engine::*;
 async fn main() {
   let mut shape_points = Vec::new();
 
-  let n = 20;
+  let n = 4;
   let r = 50.0;
   let mass = 10.0;
   for i in 0..n {
@@ -119,8 +119,8 @@ async fn main() {
   ];
 
   let p_mass = 50.0;
-  let mut point: PointMass = PointMass::new(Vec2::new(200.0, 200.0), p_mass, false);
-  let mut shape = Shape::new(shape_points, (10000.0, 150.0), (20000.0, 0.0), false, 0.5);
+  let mut point = PointMass::new(Vec2::new(200.0, 200.0), p_mass, false);
+  let mut shape = Shape::new(shape_points, (5000.0, 150.0), (15000.0, 0.0), false, 0.5);
   let mut platform = Shape::new(
     platform_points,
     (20000.0, 300.0),

@@ -5,14 +5,14 @@ use macroquad::prelude::*;
 use super::{math::*, Shape, *};
 
 const EPS: f32 = 0.00001;
-const ELASTICITY: f32 = 0.5;
-const FRICTION_COEFFICIENT: f32 = 0.25;
+const ELASTICITY: f32 = 0.8;
+const DAMPING: f32 = 0.8;
+const FRICTION_COEFFICIENT: f32 = 50.0;
 
 pub struct Collision {
   d: f32,
   normal: Vec2,
   t: f32,
-  point: Vec2,
   line: (usize, usize),
 }
 
@@ -34,38 +34,28 @@ pub fn resolve_point_line(
   let point_b = &shape.points[collision.line.1];
 
   let l_vel = point_a.velocity + point_b.velocity;
-  let l_mass = point_a.mass + point_b.mass;
-
-  let p_mass_p = point.mass / (l_mass + point.mass);
-  let l_mass_p = 1.0 - p_mass_p;
+  let p_vel = point.velocity;
 
   let dist = collision.d * collision.normal;
 
-  let p_dist = l_mass_p * dist;
-  let a_dist = p_mass_p * (1.0 - collision.t) * 2.0 * -dist;
-  let b_dist = p_mass_p * collision.t * 2.0 * -dist;
-
   let perpendicular_n = (point_b.position - point_a.position).normalize();
-  let friction_force = perpendicular_n * perpendicular_n.dot(point.velocity) * FRICTION_COEFFICIENT;
 
-  let mut d = -point.velocity.normalize().dot(l_vel.normalize());
-  if d < 0.0 {
-    d = 0.0;
-  }
+  let v_reflected = p_vel - 2.0 * (p_vel.dot(collision.normal)) * collision.normal;
+  let l_reflected = l_vel - 2.0 * (l_vel.dot(collision.normal)) * collision.normal;
 
-  let force = collision.d * collision.normal * 20000.0 * ELASTICITY * delta_time;
-  // let l_f = -force + point.velocity * 0.25 * d;
+  let friction_force =
+    perpendicular_n * perpendicular_n.dot(v_reflected) * FRICTION_COEFFICIENT * delta_time;
 
-  point.add_position(p_dist * 2.0);
-  point.velocity += force + l_vel * 0.5 * d - friction_force;
+  point.add_position(dist * 0.5);
+  point.velocity = v_reflected * ELASTICITY + l_vel * DAMPING - friction_force;
 
   let particle = &mut shape.points[collision.line.0];
-  particle.add_position(a_dist);
-  particle.velocity -= force * 0.5;
+  particle.add_position((1.0 - collision.t) * -dist);
+  particle.velocity = (1.0 - collision.t) * (l_reflected * ELASTICITY + p_vel * 0.5 * DAMPING);
 
   let particle = &mut shape.points[collision.line.1];
-  particle.add_position(b_dist);
-  particle.velocity -= force * 0.5;
+  particle.add_position(collision.t * -dist);
+  particle.velocity = collision.t * (l_reflected * ELASTICITY + p_vel * 0.5 * DAMPING);
 }
 
 pub fn point_shape_collision(point: Vec2, shape: &Shape) -> Option<Collision> {
@@ -139,7 +129,6 @@ pub fn point_shape_collision(point: Vec2, shape: &Shape) -> Option<Collision> {
     d: closest_d,
     normal: closest_n,
     t: line_t,
-    point: closest_point,
     line: (closest_line.2, closest_line.3),
   });
 }
