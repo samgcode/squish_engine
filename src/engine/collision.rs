@@ -5,9 +5,7 @@ use macroquad::prelude::*;
 use super::{math::*, Shape, *};
 
 const EPS: f32 = 0.00001;
-const ELASTICITY: f32 = 0.8;
-const DAMPING: f32 = 0.8;
-const FRICTION_COEFFICIENT: f32 = 50.0;
+const FRICTION_COEFFICIENT: f32 = 0.75;
 
 pub struct Collision {
   d: f32,
@@ -16,46 +14,48 @@ pub struct Collision {
   line: (usize, usize),
 }
 
-pub fn shape_shape_collision(shape_a: &mut Shape, shape_b: &mut Shape, delta_time: f32) {
+pub fn shape_shape_collision(shape_a: &mut Shape, shape_b: &mut Shape) {
   for point in shape_a.points.iter_mut() {
     if let Some(collision) = point_shape_collision(point.position, shape_b) {
-      resolve_point_line(point, shape_b, collision, delta_time);
+      resolve_point_line(point, shape_b, collision);
     }
   }
 }
 
-pub fn resolve_point_line(
-  point: &mut PointMass,
-  shape: &mut Shape,
-  collision: Collision,
-  delta_time: f32,
-) {
+pub fn resolve_point_line(point: &mut PointMass, shape: &mut Shape, collision: Collision) {
   let point_a = &shape.points[collision.line.0];
   let point_b = &shape.points[collision.line.1];
 
-  let l_vel = point_a.velocity + point_b.velocity;
+  let l_vel = point_a.velocity;
   let p_vel = point.velocity;
 
   let dist = collision.d * collision.normal;
 
-  let perpendicular_n = (point_b.position - point_a.position).normalize();
+  let p_parallel = p_vel.dot(collision.normal);
+  let p_perpendicular = p_vel - (p_parallel * collision.normal);
+  let l_parallel = l_vel.dot(collision.normal);
+  let l_perpendicular = l_vel - (l_parallel * collision.normal);
 
-  let v_reflected = p_vel - 2.0 * (p_vel.dot(collision.normal)) * collision.normal;
-  let l_reflected = l_vel - 2.0 * (l_vel.dot(collision.normal)) * collision.normal;
+  // v1 = ((m1-m2)v1 + 2m2v2)/(m1+m2)
+  // v2 = ((m2-m1)v2 + 2m1v1)/(m1+m2)
+  let p_parallel = (-p_parallel + 4.0 * l_parallel) / 3.0;
+  let l_parallel = (l_parallel + 2.0 * p_parallel) / 3.0;
 
-  let friction_force =
-    perpendicular_n * perpendicular_n.dot(v_reflected) * FRICTION_COEFFICIENT * delta_time;
+  let l_vel_f = l_parallel * collision.normal + l_perpendicular * FRICTION_COEFFICIENT;
 
   point.add_position(dist * 0.5);
-  point.velocity = v_reflected * ELASTICITY + l_vel * DAMPING - friction_force;
+  // point.velocity = Vec2::ZERO;
+  point.velocity = p_parallel * collision.normal + p_perpendicular * FRICTION_COEFFICIENT;
 
   let particle = &mut shape.points[collision.line.0];
   particle.add_position((1.0 - collision.t) * -dist);
-  particle.velocity = (1.0 - collision.t) * (l_reflected * ELASTICITY + p_vel * 0.5 * DAMPING);
+  // particle.velocity = Vec2::ZERO;
+  particle.velocity = (1.0 - collision.t) * l_vel_f;
 
   let particle = &mut shape.points[collision.line.1];
   particle.add_position(collision.t * -dist);
-  particle.velocity = collision.t * (l_reflected * ELASTICITY + p_vel * 0.5 * DAMPING);
+  // particle.velocity = Vec2::ZERO;
+  particle.velocity = collision.t * l_vel_f;
 }
 
 pub fn point_shape_collision(point: Vec2, shape: &Shape) -> Option<Collision> {
