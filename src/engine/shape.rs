@@ -9,7 +9,7 @@ use super::*;
 pub struct Shape {
   pub bounding_box: (Vec2, Vec2),
   lock_frame: bool,
-  position: Vec2,
+  pub position: Vec2,
   rotation: f32,
   frame: Vec<Vec2>,
   pub points: Vec<PointMass>,
@@ -78,6 +78,18 @@ impl Shape {
       springs,
       frame_springs,
     };
+  }
+
+  pub fn apply_force(&mut self, force: Vec2) {
+    for point in self.points.iter_mut() {
+      point.apply_force(force);
+    }
+  }
+
+  pub fn set_velocity(&mut self, velocity: Vec2) {
+    for point in self.points.iter_mut() {
+      point.velocity = velocity;
+    }
   }
 
   pub fn update(&mut self, delta_time: f32) {
@@ -191,14 +203,14 @@ impl Shape {
     // });
     // draw_circle_vec(self.position, 5.0, RED);
 
-    draw_rectangle_lines(
-      self.bounding_box.0.x,
-      self.bounding_box.0.y,
-      self.bounding_box.1.x - self.bounding_box.0.x,
-      self.bounding_box.1.y - self.bounding_box.0.y,
-      2.0,
-      WHITE,
-    );
+    // draw_rectangle_lines(
+    //   self.bounding_box.0.x,
+    //   self.bounding_box.0.y,
+    //   self.bounding_box.1.x - self.bounding_box.0.x,
+    //   self.bounding_box.1.y - self.bounding_box.0.y,
+    //   2.0,
+    //   WHITE,
+    // );
   }
 }
 

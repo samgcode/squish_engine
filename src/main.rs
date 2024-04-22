@@ -13,7 +13,7 @@ async fn main() {
 
   let n = 6;
   let r = 50.0;
-  let mass = 10.0;
+  let mass = 1.0;
   for i in 0..n {
     shape_points.push((
       Vec2::new(
@@ -118,19 +118,15 @@ async fn main() {
     (Vec2::new(190.0, 497.0), mass),
   ];
 
-  let p_mass = 50.0;
+  let p_mass = 1.0;
   let mut point = PointMass::new(Vec2::new(200.0, 200.0), p_mass, false);
-  let mut shape = Shape::new(shape_points, (5000.0, 150.0), (15000.0, 0.0), false, 0.5);
-  let mut platform = Shape::new(
-    platform_points,
-    (20000.0, 300.0),
-    (7000.0, 100.0),
-    true,
-    1.0,
-  );
+  let mut shape = Shape::new(shape_points, (1000.0, 15.0), (1500.0, 0.0), false, 0.5);
+  let mut platform = Shape::new(platform_points, (800.0, 30.0), (1000.0, 10.0), true, 1.0);
 
   let mut drawing = false;
   let mut drawing_points = Vec::new();
+
+  let mut direction = Vec2::ZERO;
 
   loop {
     let delta_time = get_frame_time();
@@ -161,6 +157,28 @@ async fn main() {
       if is_key_down(KeyCode::A) {
         let mouse_pos: Vec2 = mouse_position().into();
         point = PointMass::new(mouse_pos, p_mass, false);
+      }
+
+      let mut new_dir = Vec2::ZERO;
+      if is_key_down(KeyCode::Up) {
+        new_dir.y = -1.0;
+      } else if is_key_down(KeyCode::Down) {
+        new_dir.y = 1.0;
+      }
+      if is_key_down(KeyCode::Right) {
+        new_dir.x = 1.0;
+      } else if is_key_down(KeyCode::Left) {
+        new_dir.x = -1.0;
+      }
+
+      if new_dir.length() > 0.0 {
+        direction = new_dir;
+      }
+
+      draw_line_vec(shape.position, shape.position + direction * 25.0, 3.0, BLUE);
+      if is_key_pressed(KeyCode::X) {
+        shape.set_velocity(Vec2::ZERO);
+        shape.apply_force(direction * 1500.0);
       }
 
       point.apply_gravity(GRAVITY * delta_time);
