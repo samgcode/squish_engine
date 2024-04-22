@@ -26,7 +26,7 @@ pub fn resolve_point_line(point: &mut PointMass, shape: &mut Shape, collision: C
   let point_a = &shape.points[collision.line.0];
   let point_b = &shape.points[collision.line.1];
 
-  let l_vel = point_a.velocity;
+  let l_vel = (1.0 - collision.t) * point_a.velocity + collision.t * point_b.velocity;
   let p_vel = point.velocity;
 
   let dist = collision.d * collision.normal;
@@ -44,17 +44,14 @@ pub fn resolve_point_line(point: &mut PointMass, shape: &mut Shape, collision: C
   let l_vel_f = l_parallel * collision.normal + l_perpendicular * FRICTION_COEFFICIENT;
 
   point.add_position(dist * 0.5);
-  // point.velocity = Vec2::ZERO;
   point.velocity = p_parallel * collision.normal + p_perpendicular * FRICTION_COEFFICIENT;
 
   let particle = &mut shape.points[collision.line.0];
   particle.add_position((1.0 - collision.t) * -dist);
-  // particle.velocity = Vec2::ZERO;
   particle.velocity = (1.0 - collision.t) * l_vel_f;
 
   let particle = &mut shape.points[collision.line.1];
   particle.add_position(collision.t * -dist);
-  // particle.velocity = Vec2::ZERO;
   particle.velocity = collision.t * l_vel_f;
 }
 
