@@ -172,48 +172,60 @@ impl Shape {
   }
 
   pub fn draw(&self) {
-    self.mesh.draw(&self.points);
+    let positions = self.points.iter().map(|p| p.position).collect();
 
-    // self.springs.iter().for_each(|spring| {
-    //   spring.draw(&self.points[spring.a], &self.points[spring.b]);
-    // });
+    self.mesh.draw(&positions);
 
-    // self.frame_springs.iter().for_each(|spring| {
-    //   spring.draw(&self.points[spring.a], &self.frame_points[spring.b]);
-    // });
+    if DRAW_SPRINGS {
+      self.springs.iter().for_each(|spring| {
+        spring.draw(&self.points[spring.a], &self.points[spring.b]);
+      });
 
-    // self.points.iter().for_each(|point| {
-    //   point.draw();
-    // });
+      self.frame_springs.iter().for_each(|spring| {
+        spring.draw(&self.points[spring.a], &self.frame_points[spring.b]);
+      });
+    }
 
-    // draw_line_vec(
-    //   self.points[self.np - 1].position,
-    //   self.points[0].position,
-    //   2.0,
-    //   WHITE,
-    // );
-    // for i in 1..self.np {
-    //   draw_line_vec(
-    //     self.points[i - 1].position,
-    //     self.points[i].position,
-    //     2.0,
-    //     WHITE,
-    //   );
-    // }
+    if DRAW_POINTS {
+      self.points.iter().for_each(|point| {
+        point.draw();
+      });
+    }
 
-    // self.frame_points.iter().for_each(|point| {
-    //   draw_circle_vec(point.position, 4.0, GRAY);
-    // });
-    // draw_circle_vec(self.position, 5.0, RED);
+    if DRAW_OUTLINE {
+      draw_line_vec(
+        self.points[self.np - 1].position,
+        self.points[0].position,
+        2.0,
+        WHITE,
+      );
+      for i in 1..self.np {
+        draw_line_vec(
+          self.points[i - 1].position,
+          self.points[i].position,
+          2.0,
+          WHITE,
+        );
+      }
+    }
 
-    // draw_rectangle_lines(
-    //   self.bounding_box.0.x,
-    //   self.bounding_box.0.y,
-    //   self.bounding_box.1.x - self.bounding_box.0.x,
-    //   self.bounding_box.1.y - self.bounding_box.0.y,
-    //   2.0,
-    //   WHITE,
-    // );
+    if DRAW_FRAME {
+      self.frame_points.iter().for_each(|point| {
+        draw_circle_vec(point.position, 4.0, GRAY);
+      });
+      draw_circle_vec(self.position, 5.0, RED);
+    }
+
+    if DRAW_BOUNDING_BOX {
+      draw_rectangle_lines(
+        self.bounding_box.0.x,
+        self.bounding_box.0.y,
+        self.bounding_box.1.x - self.bounding_box.0.x,
+        self.bounding_box.1.y - self.bounding_box.0.y,
+        2.0,
+        WHITE,
+      );
+    }
   }
 
   pub fn set_texture(&mut self, texture: Texture2D) {

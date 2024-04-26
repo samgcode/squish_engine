@@ -2,7 +2,9 @@ use std::f32::INFINITY;
 
 use macroquad::prelude::*;
 
-use super::{cross_2d, PointMass};
+use crate::config::*;
+
+use super::cross_2d;
 
 pub struct TriMesh {
   tex_coords: Vec<(f32, f32)>,
@@ -39,32 +41,36 @@ impl TriMesh {
     self.material.set_texture("tex", texture);
   }
 
-  pub fn draw(&self, points: &Vec<PointMass>) {
-    for i in 0..self.indices.len() / 3 {
-      let a = &points[self.indices[i * 3] as usize];
-      let b = &points[self.indices[i * 3 + 1] as usize];
-      let c = &points[self.indices[i * 3 + 2] as usize];
-      draw_triangle_lines(a.position, b.position, c.position, 2.0, GREEN);
+  pub fn draw(&self, points: &Vec<Vec2>) {
+    if DRAW_TRIANGLES {
+      for i in 0..self.indices.len() / 3 {
+        let a = points[self.indices[i * 3] as usize];
+        let b = points[self.indices[i * 3 + 1] as usize];
+        let c = points[self.indices[i * 3 + 2] as usize];
+        draw_triangle_lines(a, b, c, 2.0, GREEN);
+      }
     }
 
-    gl_use_material(&self.material);
-    let mut vertices = Vec::new();
+    if DRAW_TEXTURE {
+      gl_use_material(&self.material);
+      let mut vertices = Vec::new();
 
-    for (i, v) in points.iter().enumerate() {
-      vertices.push(Vertex::new(
-        v.position.x,
-        v.position.y,
-        0.0,
-        self.tex_coords[i].0,
-        self.tex_coords[i].1,
-        RED,
-      ));
+      for (i, v) in points.iter().enumerate() {
+        vertices.push(Vertex::new(
+          v.x,
+          v.y,
+          0.0,
+          self.tex_coords[i].0,
+          self.tex_coords[i].1,
+          RED,
+        ));
+      }
+
+      let context = unsafe { get_internal_gl() };
+      context.quad_gl.draw_mode(DrawMode::Triangles);
+      context.quad_gl.geometry(&vertices, &self.indices);
+      gl_use_default_material();
     }
-
-    let context = unsafe { get_internal_gl() };
-    context.quad_gl.draw_mode(DrawMode::Triangles);
-    context.quad_gl.geometry(&vertices, &self.indices);
-    gl_use_default_material();
   }
 }
 
@@ -167,7 +173,6 @@ fn generate_uv(shape: &Vec<Vec2>) -> Vec<(f32, f32)> {
   for v in shape {
     let u = (v.x - min.x) / width;
     let v = (v.y - min.y) / height;
-    println!("{}, {}", u, v);
 
     uv.push((u, v));
   }
