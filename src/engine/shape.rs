@@ -17,6 +17,7 @@ pub struct Shape {
   np: usize,
   springs: Vec<Spring>,
   frame_springs: Vec<Spring>,
+  mesh: TriMesh,
 }
 
 impl Shape {
@@ -63,8 +64,7 @@ impl Shape {
       frame_springs.push(Spring::new(frame_strength.0, 0.0, frame_strength.1, i, i));
     }
 
-    // points[np - 1].locked = true;
-    // points[0].apply_force(Vec2::new(10000.0, 10000.0));
+    let mesh = TriMesh::generate(frame.clone());
 
     return Self {
       bounding_box: (min, max),
@@ -77,6 +77,7 @@ impl Shape {
       np,
       springs,
       frame_springs,
+      mesh,
     };
   }
 
@@ -145,7 +146,7 @@ impl Shape {
       for (i, v) in self.points.iter().enumerate() {
         let r = v.position - self.position;
         a += r.dot(self.frame[i]);
-        b += cross(r, self.frame[i]);
+        b += cross_2d(r, self.frame[i]);
       }
       let angle = -(b.atan2(a));
 
@@ -171,32 +172,34 @@ impl Shape {
   }
 
   pub fn draw(&self) {
-    self.springs.iter().for_each(|spring| {
-      spring.draw(&self.points[spring.a], &self.points[spring.b]);
-    });
+    self.mesh.draw(&self.points);
 
-    self.frame_springs.iter().for_each(|spring| {
-      spring.draw(&self.points[spring.a], &self.frame_points[spring.b]);
-    });
+    // self.springs.iter().for_each(|spring| {
+    //   spring.draw(&self.points[spring.a], &self.points[spring.b]);
+    // });
+
+    // self.frame_springs.iter().for_each(|spring| {
+    //   spring.draw(&self.points[spring.a], &self.frame_points[spring.b]);
+    // });
 
     // self.points.iter().for_each(|point| {
     //   point.draw();
     // });
 
-    draw_line_vec(
-      self.points[self.np - 1].position,
-      self.points[0].position,
-      2.0,
-      WHITE,
-    );
-    for i in 1..self.np {
-      draw_line_vec(
-        self.points[i - 1].position,
-        self.points[i].position,
-        2.0,
-        WHITE,
-      );
-    }
+    // draw_line_vec(
+    //   self.points[self.np - 1].position,
+    //   self.points[0].position,
+    //   2.0,
+    //   WHITE,
+    // );
+    // for i in 1..self.np {
+    //   draw_line_vec(
+    //     self.points[i - 1].position,
+    //     self.points[i].position,
+    //     2.0,
+    //     WHITE,
+    //   );
+    // }
 
     // self.frame_points.iter().for_each(|point| {
     //   draw_circle_vec(point.position, 4.0, GRAY);
@@ -211,6 +214,10 @@ impl Shape {
     //   2.0,
     //   WHITE,
     // );
+  }
+
+  pub fn set_texture(&mut self, texture: Texture2D) {
+    self.mesh.set_texture(texture);
   }
 }
 

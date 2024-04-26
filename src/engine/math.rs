@@ -21,6 +21,6 @@ pub fn inverse_lerp_vec(v: Vec2, a: Vec2, b: Vec2) -> f32 {
 }
 
 #[allow(dead_code)]
-pub fn cross(a: Vec2, b: Vec2) -> f32 {
+pub fn cross_2d(a: Vec2, b: Vec2) -> f32 {
   return a.x * b.y - a.y * b.x;
 }
