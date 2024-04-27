@@ -12,7 +12,7 @@ use engine::*;
 async fn main() {
   let mut shape_points = Vec::new();
 
-  let n = 20;
+  let n = 10;
   let r = 50.0;
   let mass = 1.0;
   for i in 0..n {

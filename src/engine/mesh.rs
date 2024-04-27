@@ -4,19 +4,23 @@ use macroquad::prelude::*;
 
 use crate::config::*;
 
-use super::cross_2d;
+use super::{cross_2d, PointMass};
 
-pub struct TriMesh {
+pub struct SoftMesh {
   tex_coords: Vec<(f32, f32)>,
   indices: Vec<u16>,
   material: Material,
 }
 
-impl TriMesh {
+impl SoftMesh {
   pub fn generate(shape: Vec<Vec2>) -> Self {
     let tex_coords = generate_uv(&shape);
 
-    let indices = triangulate(shape).iter().map(|i| *i as u16).collect();
+    let indices = triangulate(shape)
+      .unwrap()
+      .iter()
+      .map(|i| *i as u16)
+      .collect();
 
     let material = load_material(
       ShaderSource::Glsl {
@@ -41,24 +45,21 @@ impl TriMesh {
     self.material.set_texture("tex", texture);
   }
 
-  pub fn draw(&self, points: &Vec<Vec2>) {
-    if DRAW_TRIANGLES {
-      for i in 0..self.indices.len() / 3 {
-        let a = points[self.indices[i * 3] as usize];
-        let b = points[self.indices[i * 3 + 1] as usize];
-        let c = points[self.indices[i * 3 + 2] as usize];
-        draw_triangle_lines(a, b, c, 2.0, GREEN);
-      }
+  pub fn update_triangles(&mut self, points: &Vec<Vec2>) {
+    if let Some(triangles) = triangulate(points.clone()) {
+      self.indices = triangles.iter().map(|i| *i as u16).collect();
     }
+  }
 
+  pub fn draw(&self, points: &Vec<PointMass>) {
     if DRAW_TEXTURE {
       gl_use_material(&self.material);
       let mut vertices = Vec::new();
 
       for (i, v) in points.iter().enumerate() {
         vertices.push(Vertex::new(
-          v.x,
-          v.y,
+          v.position.x,
+          v.position.y,
           0.0,
           self.tex_coords[i].0,
           self.tex_coords[i].1,
@@ -71,14 +72,26 @@ impl TriMesh {
       context.quad_gl.geometry(&vertices, &self.indices);
       gl_use_default_material();
     }
+
+    if DRAW_TRIANGLES {
+      for i in 0..self.indices.len() / 3 {
+        let a = &points[self.indices[i * 3] as usize];
+        let b = &points[self.indices[i * 3 + 1] as usize];
+        let c = &points[self.indices[i * 3 + 2] as usize];
+        draw_triangle_lines(a.position, b.position, c.position, 3.0, GREEN);
+      }
+    }
   }
 }
 
-fn triangulate(shape: Vec<Vec2>) -> Vec<usize> {
+fn triangulate(shape: Vec<Vec2>) -> Option<Vec<usize>> {
   let mut indices = (0..shape.len()).collect::<Vec<usize>>();
   let mut triangles = Vec::<usize>::new();
 
+  let mut valid = true;
+
   while indices.len() > 3 {
+    let mut is_ear = false;
     for v in 1..indices.len() {
       let vert = indices[v];
       let (prev, next) = get_adjacent(v, &indices);
@@ -90,7 +103,7 @@ fn triangulate(shape: Vec<Vec2>) -> Vec<usize> {
         continue; // vertex is convex
       }
 
-      let mut is_ear = true;
+      is_ear = true;
 
       for i in 0..shape.len() {
         if i == vert || i == prev || i == next {
@@ -113,13 +126,20 @@ fn triangulate(shape: Vec<Vec2>) -> Vec<usize> {
         break;
       }
     }
+    if !is_ear {
+      valid = false;
+      break;
+    }
+  }
+  if valid {
+    triangles.push(indices[0]);
+    triangles.push(indices[1]);
+    triangles.push(indices[2]);
+
+    return Some(triangles);
   }
 
-  triangles.push(indices[0]);
-  triangles.push(indices[1]);
-  triangles.push(indices[2]);
-
-  return triangles;
+  return None;
 }
 
 fn get_adjacent(i: usize, list: &Vec<usize>) -> (usize, usize) {

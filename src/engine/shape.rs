@@ -17,7 +17,7 @@ pub struct Shape {
   np: usize,
   springs: Vec<Spring>,
   frame_springs: Vec<Spring>,
-  mesh: TriMesh,
+  mesh: SoftMesh,
 }
 
 impl Shape {
@@ -64,7 +64,7 @@ impl Shape {
       frame_springs.push(Spring::new(frame_strength.0, 0.0, frame_strength.1, i, i));
     }
 
-    let mesh = TriMesh::generate(frame.clone());
+    let mesh = SoftMesh::generate(frame.clone());
 
     return Self {
       bounding_box: (min, max),
@@ -169,12 +169,14 @@ impl Shape {
       let force = spring.calculate_force(a, &self.frame_points[spring.b]);
       a.velocity += force / a.mass * delta_time;
     }
+
+    let positions = self.points.iter().map(|p| p.position).collect();
+
+    self.mesh.update_triangles(&positions);
   }
 
   pub fn draw(&self) {
-    let positions = self.points.iter().map(|p| p.position).collect();
-
-    self.mesh.draw(&positions);
+    self.mesh.draw(&self.points);
 
     if DRAW_SPRINGS {
       self.springs.iter().for_each(|spring| {
