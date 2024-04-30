@@ -1,4 +1,4 @@
-use std::f32::INFINITY;
+use std::f32::{INFINITY, NEG_INFINITY};
 
 use macroquad::prelude::*;
 
@@ -177,7 +177,7 @@ fn point_in_triangle(p: Vec2, a: Vec2, b: Vec2, c: Vec2) -> bool {
 
 fn generate_uv(shape: &Vec<Vec2>) -> Vec<(f32, f32)> {
   let mut min = Vec2::new(INFINITY, INFINITY);
-  let mut max = Vec2::new(0.0, 0.0);
+  let mut max = Vec2::new(NEG_INFINITY, NEG_INFINITY);
 
   for v in shape.clone() {
     min = min.min(v);

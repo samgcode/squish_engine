@@ -1,4 +1,4 @@
-use config::GRAVITY;
+use config::*;
 use macroquad::prelude::*;
 use std::f32::consts::TAU;
 
@@ -42,6 +42,9 @@ async fn main() {
   let mut drawing_points = Vec::new();
 
   let mut direction = Vec2::ZERO;
+
+  let aspect_ratio = screen_width() / screen_height();
+  let scale = 500.0 / ZOOM;
 
   loop {
     // let delta_time = get_frame_time();
@@ -107,6 +110,12 @@ async fn main() {
       if let Some(collision) = point_shape_collision(point.position, &platform) {
         resolve_point_line(&mut point, &mut platform, collision);
       }
+
+      set_camera(&Camera2D {
+        zoom: vec2(1.0, aspect_ratio) / scale,
+        offset: vec2(-shape.position.x, shape.position.y * aspect_ratio) / scale,
+        ..Default::default()
+      });
 
       next_frame().await;
       shape.draw();

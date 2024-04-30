@@ -1,4 +1,4 @@
-use std::f32::INFINITY;
+use std::f32::{INFINITY, NEG_INFINITY};
 
 use macroquad::prelude::*;
 
@@ -29,7 +29,7 @@ impl Shape {
     scale: f32,
   ) -> Self {
     let mut min = Vec2::new(INFINITY, INFINITY);
-    let mut max = Vec2::ZERO;
+    let mut max = Vec2::new(NEG_INFINITY, NEG_INFINITY);
     let mut total_position = Vec2::ZERO;
 
     let mut points = Vec::new();
@@ -94,11 +94,6 @@ impl Shape {
   }
 
   pub fn update(&mut self, delta_time: f32) {
-    if is_mouse_button_down(MouseButton::Left) && !self.lock_frame {
-      self.points[self.np - 1].position = mouse_position().into();
-      self.points[self.np - 1].velocity = Vec2::ZERO;
-    }
-
     for point in self.points.iter_mut() {
       point.apply_gravity(GRAVITY * delta_time);
       point.update(delta_time);
@@ -125,7 +120,7 @@ impl Shape {
     }
 
     let mut min = Vec2::new(INFINITY, INFINITY);
-    let mut max = Vec2::ZERO;
+    let mut max = Vec2::new(NEG_INFINITY, NEG_INFINITY);
 
     let mut total_position = Vec2::ZERO;
 
