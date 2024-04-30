@@ -123,7 +123,7 @@ pub fn point_shape_collision(point: Vec2, shape: &Shape) -> Option<Collision> {
   let line_t = inverse_lerp_vec(closest_point, closest_line.0, closest_line.1);
 
   return Some(Collision {
-    d: closest_d,
+    d: closest_d + 1.0,
     normal: closest_n,
     t: line_t,
     line: (closest_line.2, closest_line.3),

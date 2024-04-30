@@ -26,11 +26,11 @@ async fn main() {
   }
 
   let platform_points: Vec<(Vec2, f32)> = object_data::PLATFORM_POINTS.into();
-  // let shape_points: Vec<(Vec2, f32)> = object_data::_SKRUNGLE_POINTS.into();
+  let shape_points: Vec<(Vec2, f32)> = object_data::_SKRUNGLE_POINTS.into();
 
   let p_mass = 1.0;
   let mut point = PointMass::new(Vec2::new(200.0, 200.0), p_mass, false);
-  let mut shape = Shape::new(shape_points, (200.0, 15.0), (800.0, 0.0), false, 0.75);
+  let mut shape = Shape::new(shape_points, (500.0, 30.0), (1500.0, 0.0), false, 0.15);
   let mut platform = Shape::new(platform_points, (800.0, 30.0), (1000.0, 10.0), true, 1.0);
 
   // let texture =
